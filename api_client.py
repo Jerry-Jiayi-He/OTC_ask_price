@@ -5,22 +5,25 @@ API 客户端模块
 本模块负责与期权询价 API 进行交互，包括提交询价请求和获取结果。
 """
 
-import json
 import time
 from typing import Iterable, List, Optional
 
 import requests
 
 from config import (
+    BROKERS,
     CREATE_URL,
     DEADLINE,
+    DEADLINE_LABEL,
     HEADERS,
+    INQUIRY_SCALE,
     MAX_POLL_ATTEMPTS,
+    ORGAN_ID,
     POLL_INTERVAL,
     PRODUCT_TYPE,
-    INQUIRY_SCALE,
     RESULT_URL,
-    TARGET_VENDORS,
+    SCALE_NAME,
+    STRUCTURES,
 )
 
 
@@ -44,16 +47,31 @@ def submit_inquiry(stock_code: str, structures: Iterable[str]) -> Optional[int]:
     如果请求失败（例如由于身份验证），此函数会打印错误消息并返回 ``None``。
     在运行脚本之前，您应确保配置文件中的 ``HEADERS`` 包含有效的授权值。
     """
+    structure_list = list(structures)
+    structure_payload = [
+        {"label": STRUCTURES.get(struct, struct), "value": struct}
+        for struct in structure_list
+        if struct in STRUCTURES
+    ]
+    if not structure_payload:
+        print(f"未找到有效的结构代码用于股票 {stock_code}: {structure_list}")
+        return None
+
     payload = {
-        "stockCode": stock_code,
         "type": PRODUCT_TYPE,
+        "organId": ORGAN_ID,
+        "stockCode": stock_code,
         "scale": INQUIRY_SCALE,
+        "scaleName": SCALE_NAME,
         "deadline": DEADLINE,
-        "structures": list(structures),
-        "vendors": TARGET_VENDORS,
+        "deadlines": [
+            {"label": DEADLINE_LABEL, "value": DEADLINE},
+        ],
+        "structures": structure_payload,
+        "brokers": BROKERS,
     }
     try:
-        response = requests.post(CREATE_URL, headers=HEADERS, data=json.dumps(payload))
+        response = requests.post(CREATE_URL, headers=HEADERS, json=payload)
         response.raise_for_status()
         data = response.json()
         # Fiddler 捕获的接口返回格式通常是 {"code":0,"data":<id>,"msg":""}
