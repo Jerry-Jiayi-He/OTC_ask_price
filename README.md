@@ -19,7 +19,7 @@ option_ask_price/
 
 - ✅ 批量处理多只股票的期权询价
 - ✅ 支持多种期权结构（实值90、平值100、虚值105）
-- ✅ 从多个券商获取报价（GJFXZ、YHDR、ZQSY、ZJ、GF）
+- ✅ 从多个券商获取报价（GF、ZJ、ZQSY、YHDR、GJFXZ、YAZB、HTCC、ZZZB）
 - ✅ 自动轮询结果直到获取完整数据
 - ✅ 输出格式化的 Excel 报表（包含 MultiIndex 列）
 
@@ -43,8 +43,8 @@ RESULT_URL = "https://your-actual-server.com/app-api/option-ask/result"
 # HTTP 头（包含认证信息）
 HEADERS = {
     "Content-Type": "application/json;charset=UTF-8",
-    "Authorization": "Bearer <your-actual-token>",
-    "Cookie": "<your-actual-cookie>",
+    "Authorization": "Bearer <your-actual-token>",  # 如果需要
+    "Cookie": "<your-actual-cookie>",              # 如果需要
 }
 ```
 
@@ -69,10 +69,13 @@ HEADERS = {
 
 在 `config.py` 中可以自定义：
 
-- `TARGET_VENDORS`: 券商列表
-- `STRUCTURES`: 期权结构类型
-- `DEADLINE`: 期限（默认 1 个月）
-- `INQUIRY_SCALE`: 询价规模（默认 100 万）
+- `CREATE_URL` / `RESULT_URL`: 实际 API 端点
+- `HEADERS`: 认证信息（Token、Cookie 等）
+- `ORGAN_ID`: 询价所属机构 ID
+- `BROKERS`: 需要报价的券商及其 ID
+- `STRUCTURES`: 期权结构类型及展示名称
+- `DEADLINE` / `DEADLINE_LABEL`: 期限代码与展示名称
+- `INQUIRY_SCALE` / `SCALE_NAME`: 询价规模及展示名称
 - `POLL_INTERVAL` 和 `MAX_POLL_ATTEMPTS`: 轮询参数
 
 ## 使用方法
@@ -111,8 +114,8 @@ python main.py
 ## 输出文件格式
 
 输出的 Excel 文件包含 MultiIndex 列：
-- 第一级：结构类型 + 期限（例如 "90c 1m"）
-- 第二级：券商名称（GJFXZ、YHDR、ZQSY、ZJ、GF）
+- 第一级：结构类型 + 期限（例如 "实值90 1个月"）
+- 第二级：券商名称（GF、ZJ、ZQSY、YHDR、GJFXZ、YAZB、HTCC、ZZZB）
 - 行索引：股票代码
 - 单元格值：报价百分比（例如 13.33 表示 13.33%）
 

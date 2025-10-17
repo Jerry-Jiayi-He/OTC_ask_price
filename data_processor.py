@@ -11,7 +11,7 @@ from typing import Dict, Iterable, List, Optional
 import pandas as pd
 
 from api_client import fetch_result, submit_inquiry
-from config import DEADLINE, STRUCTURES, TARGET_VENDORS
+from config import DEADLINE, DEADLINE_LABEL, STRUCTURES, TARGET_VENDORS
 
 
 def parse_quotes(items: List[dict], structures: Iterable[str]) -> Dict[str, Dict[str, Optional[float]]]:
@@ -95,9 +95,10 @@ def build_dataframe(records: List[Dict[str, Dict[str, Optional[float]]]],
     """
     # 构建列元组列表：(结构标签 + ' ' + 期限, 券商)
     column_tuples: List[tuple] = []
+    deadline_display = DEADLINE_LABEL or DEADLINE
     for struct_code, struct_label in STRUCTURES.items():
-        # 将期限后缀添加到结构名称以匹配示例（例如 "90c 1m"）
-        header = f"{struct_code} {DEADLINE}"
+        # 将期限后缀添加到结构名称以匹配示例（例如 "实值90 1个月"）
+        header = f"{struct_label} {deadline_display}"
         for vendor in TARGET_VENDORS:
             column_tuples.append((header, vendor))
     
