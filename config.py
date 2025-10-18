@@ -22,18 +22,18 @@ OUTPUT_FILE: str = "output.xlsx"
 # API 配置
 ###############################################################################
 
-# API 端点。请将这些值替换为从 Fiddler 捕获中获得的实际端点。
-# 例如，创建端点可能类似 ``https://option.example.com/app-api/option-ask/create``
-# 结果端点可能是 ``https://option.example.com/app-api/option-ask/result``。
-CREATE_URL: str = "https://option.example.com/app-api/option-ask/create"  # TODO: 替换此值
-RESULT_URL: str = "https://option.example.com/app-api/option-ask/result"  # TODO: 替换此值
+# API 端点。根据实际抓包结果配置。
+# 第一步：提交询价请求 -> 返回询价 ID
+# 第二步：使用询价 ID 查询结果（通过 URL 参数传递 id）
+CREATE_URL: str = "https://option.topctop.com/app-api/stock/inquiry/create"
+RESULT_URL: str = "https://option.topctop.com/app-api/stock/inquiry/get"  # 注意：id 参数会在请求时自动添加
 
 # API 所需的 HTTP 头。至少应包含 ``Content-Type`` 设置为 ``application/json;charset=UTF-8``。
 # 很可能您还需要提供从 Fiddler 捕获的 ``Authorization`` 头或会话 ``Cookie``，
 # 以便对后端进行身份验证。请填入在捕获中观察到的适当值。
 HEADERS: Dict[str, str] = {
     "Content-Type": "application/json;charset=UTF-8",
-    # "Authorization": "Bearer <your-token>",  # 如果需要身份验证，请取消注释并替换
+    "Authorization": "Bearer 34d76d4e52764fff80a9634ff0ee98bb",  # 如果需要身份验证，请取消注释并替换
 }
 
 # 询价所属机构 ID。通常可以在抓包数据中看到，例如 ``"organId": 1``。

@@ -168,7 +168,7 @@ from data_processor import process_stock
 from config import STRUCTURES
 
 # 处理单只股票
-quotes = process_stock("300476")
+quotes = process_stock("300017")
 print(quotes)
 ```
 
