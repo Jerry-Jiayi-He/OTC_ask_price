@@ -34,7 +34,7 @@ DEADLINES_TO_QUERY: List[Tuple[str, str]] = [
     ("3m", "3个月"),
 ]
 
-# 如果只想查询单个期限，可以这样设置：
+# 如果查询单个期限
 # DEADLINES_TO_QUERY = [("1m", "1个月")]
 
 
