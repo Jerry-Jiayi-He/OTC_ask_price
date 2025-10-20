@@ -10,11 +10,10 @@ from typing import Iterable, List, Optional
 
 import requests
 
+import config  # 导入整个 config 模块以动态获取值
 from config import (
     BROKERS,
     CREATE_URL,
-    DEADLINE,
-    DEADLINE_LABEL,
     HEADERS,
     INQUIRY_SCALE,
     MAX_POLL_ATTEMPTS,
@@ -48,24 +47,26 @@ def submit_inquiry(stock_code: str, structures: Iterable[str]) -> Optional[int]:
     在运行脚本之前，您应确保配置文件中的 ``HEADERS`` 包含有效的授权值。
     """
     structure_list = list(structures)
+    # 动态获取最新的 STRUCTURES 配置
     structure_payload = [
-        {"label": STRUCTURES.get(struct, struct), "value": struct}
+        {"label": config.STRUCTURES.get(struct, struct), "value": struct}
         for struct in structure_list
-        if struct in STRUCTURES
+        if struct in config.STRUCTURES
     ]
     if not structure_payload:
         print(f"未找到有效的结构代码用于股票 {stock_code}: {structure_list}")
         return None
 
+    # 动态获取最新的期限参数（支持多期限查询）
     payload = {
         "type": PRODUCT_TYPE,
         "organId": ORGAN_ID,
         "stockCode": stock_code,
         "scale": INQUIRY_SCALE,
         "scaleName": SCALE_NAME,
-        "deadline": DEADLINE,
+        "deadline": config.DEADLINE,  # 动态获取
         "deadlines": [
-            {"label": DEADLINE_LABEL, "value": DEADLINE},
+            {"label": config.DEADLINE_LABEL, "value": config.DEADLINE},  # 动态获取
         ],
         "structures": structure_payload,
         "brokers": BROKERS,

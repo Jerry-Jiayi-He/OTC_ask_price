@@ -11,6 +11,7 @@ from typing import Dict, Iterable, List, Optional
 import pandas as pd
 
 from api_client import fetch_result, submit_inquiry
+import config  # 改为导入整个 config 模块，而不是具体的变量
 from config import DEADLINE, DEADLINE_LABEL, STRUCTURES, TARGET_VENDORS
 
 
@@ -65,13 +66,14 @@ def process_stock(stock_code: str) -> Dict[str, Dict[str, Optional[float]]]:
     Dict[str, Dict[str, Optional[float]]]
         按结构和券商键入的报价字典。如果发生错误，返回空字典。
     """
-    inquiry_id = submit_inquiry(stock_code, STRUCTURES.keys())
+    # 动态获取最新的 STRUCTURES 配置
+    inquiry_id = submit_inquiry(stock_code, config.STRUCTURES.keys())
     if inquiry_id is None:
         return {}
     items = fetch_result(inquiry_id)
     if not items:
         return {}
-    return parse_quotes(items, STRUCTURES.keys())
+    return parse_quotes(items, config.STRUCTURES.keys())
 
 
 def build_dataframe(records: List[Dict[str, Dict[str, Optional[float]]]],
@@ -95,7 +97,8 @@ def build_dataframe(records: List[Dict[str, Dict[str, Optional[float]]]],
     """
     # 构建列元组列表：(结构标签 + ' ' + 期限, 券商)
     column_tuples: List[tuple] = []
-    deadline_display = DEADLINE_LABEL or DEADLINE
+    # 动态获取最新的期限参数
+    deadline_display = config.DEADLINE_LABEL or config.DEADLINE
     for struct_code, struct_label in STRUCTURES.items():
         # 将期限后缀添加到结构名称以匹配示例（例如 "实值90 1个月"）
         header = f"{struct_label} {deadline_display}"
@@ -152,32 +155,65 @@ def read_stock_codes(input_file: str) -> List[str]:
     return stock_codes_full
 
 
-def process_all_stocks(stock_codes_full: List[str]) -> pd.DataFrame:
+def process_all_stocks(stock_codes_full: List[str], batch_size: int = 500, 
+                      save_intermediate: bool = True) -> pd.DataFrame:
     """批量处理所有股票并返回结果 DataFrame。
 
     参数
     ----------
     stock_codes_full : List[str]
         完整的股票代码列表（包括交易所后缀）。
+    batch_size : int, optional
+        每批处理的股票数量，默认 500。处理完每批后会保存中间结果。
+    save_intermediate : bool, optional
+        是否保存中间结果，默认 True。
 
     返回值
     -------
     pandas.DataFrame
         包含所有股票报价的 DataFrame，值已转换为百分比。
     """
+    from datetime import datetime
+    
+    # 创建输出目录（动态获取最新的 INTERMEDIATE_DIR）
+    if save_intermediate:
+        intermediate_path = Path(config.INTERMEDIATE_DIR)
+        intermediate_path.mkdir(parents=True, exist_ok=True)
+        print(f"中间文件将保存至: {config.INTERMEDIATE_DIR}\n")
+    
     # 提取股票代码的数字部分（点之前的部分）
     stock_codes_numeric = [code.split(".")[0] for code in stock_codes_full]
     
-    # 对每只股票执行询价
+    total_stocks = len(stock_codes_full)
     quote_records: List[Dict[str, Dict[str, Optional[float]]]] = []
-    for numeric_code in stock_codes_numeric:
+    
+    print(f"\n总共需要处理 {total_stocks} 只股票")
+    print(f"将每 {batch_size} 只股票保存一次中间结果\n")
+    
+    # 对每只股票执行询价
+    for i, numeric_code in enumerate(stock_codes_numeric, 1):
+        # 显示进度
+        if i % 100 == 0 or i == 1:
+            print(f"[进度] {i}/{total_stocks} ({i/total_stocks*100:.1f}%) - 正在处理: {stock_codes_full[i-1]}")
+        
         quotes = process_stock(numeric_code)
         quote_records.append(quotes)
+        
+        # 每处理 batch_size 只股票，保存一次中间结果
+        if save_intermediate and i % batch_size == 0:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            intermediate_file = Path(config.INTERMEDIATE_DIR) / f"batch_{i//batch_size}_{timestamp}.xlsx"
+            
+            # 构建当前批次的 DataFrame（保持小数形式）
+            df_current = build_dataframe(quote_records, stock_codes_full[:i])
+            
+            # 保存中间结果
+            df_current.to_excel(intermediate_file)
+            print(f"\n✅ [中间保存] 已处理 {i} 只股票，保存至: {intermediate_file}\n")
     
-    # 构建 DataFrame
+    # 构建最终 DataFrame
+    print(f"\n[完成] 所有 {total_stocks} 只股票处理完毕，正在生成最终结果...")
     df_quotes = build_dataframe(quote_records, stock_codes_full)
     
-    # 乘以 100 将小数转换为百分比（如果需要）
-    df_percentage = df_quotes.applymap(lambda x: round(x * 100, 2) if isinstance(x, float) else x)
-    
-    return df_percentage
+    # 直接返回小数形式，不转换为百分比
+    return df_quotes

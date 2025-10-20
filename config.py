@@ -8,6 +8,14 @@
 from typing import Dict, List
 
 ###############################################################################
+# 如果查询其他期限，修改这里！！！
+###############################################################################
+# 询价期限参数
+DEADLINE: str = "1m"
+# 期限标签
+DEADLINE_LABEL: str = "1个月"
+
+###############################################################################
 # 文件路径配置
 ###############################################################################
 
@@ -15,8 +23,12 @@ from typing import Dict, List
 # 例如 ``300476.XSHE``。
 INPUT_FILE: str = "input.xlsx"
 
-# 将要生成的输出 Excel 文件的路径。
-OUTPUT_FILE: str = "output.xlsx"
+# 输出文件夹结构：output/output_{期限}/
+OUTPUT_DIR: str = f"output/output_{DEADLINE}"
+# 中间文件存放目录
+INTERMEDIATE_DIR: str = f"{OUTPUT_DIR}/intermediate"
+# 最终输出文件路径
+OUTPUT_FILE: str = f"{OUTPUT_DIR}/final_result_{DEADLINE}.xlsx"
 
 ###############################################################################
 # API 配置
@@ -64,13 +76,11 @@ TARGET_VENDORS: List[str] = [broker["label"] for broker in BROKERS]
 # 您可以根据需要在此处添加或删除项目。所有结构将使用 ``DEADLINE`` 指定的相同期限。
 STRUCTURES: Dict[str, str] = {
     "90c": "实值90",
+    "95c": "实值95",
     "100c": "平值100",
+    "103c": "虚值103",
     "105c": "虚值105",
 }
-
-# 所有询价的期限（截止日期）。``1m`` 表示"1个月"。
-DEADLINE: str = "1m"
-DEADLINE_LABEL: str = "1个月"
 
 # 商品类型：0 代表香草期权 (vanilla)。如果抓包显示不同，请调整。
 PRODUCT_TYPE: int = 0
